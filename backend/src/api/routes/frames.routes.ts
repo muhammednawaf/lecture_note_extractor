@@ -92,9 +92,13 @@ router.post('/:id/frames', upload.single('file'), async (req: Request, res: Resp
       ...(job.status === 'CREATED' && { status: 'CAPTURING' }),
     });
 
+    const protocol = (req.headers['x-forwarded-proto'] as string) || req.protocol || 'http';
+    const host = req.get('host') || 'localhost:8000';
+    const baseUrl = `${protocol}://${host}`;
+
     return res.status(201).json({
       ...frame,
-      imageUrl: `/storage/${relativeImagePath}`,
+      imageUrl: `${baseUrl}/storage/${relativeImagePath}`,
     });
   } catch (error: any) {
     console.error('Error uploading frame:', error);
@@ -109,9 +113,13 @@ router.get('/:id/frames', async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string, 10) || 100;
     const frames = await FrameRepository.findByJobId(jobId, limit);
 
+    const protocol = (req.headers['x-forwarded-proto'] as string) || req.protocol || 'http';
+    const host = req.get('host') || 'localhost:8000';
+    const baseUrl = `${protocol}://${host}`;
+
     const enriched = frames.map((f) => ({
       ...f,
-      imageUrl: `/storage/${f.imagePath}`,
+      imageUrl: `${baseUrl}/storage/${f.imagePath}`,
     }));
 
     return res.json(enriched);

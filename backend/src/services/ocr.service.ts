@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import sharp from 'sharp';
 import { createWorker, Worker } from 'tesseract.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -92,6 +93,13 @@ export class OcrService {
         console.log('[OcrService] Initializing Tesseract OCR worker...');
         ensureWasmFeatureDetectPatched();
         const w = await createWorker('eng');
+        try {
+          await w.setParameters({
+            debug_file: '/dev/null',
+          });
+        } catch {
+          // ignore debug parameter if unsupported in worker
+        }
         this.worker = w;
         console.log('[OcrService] Tesseract OCR worker ready.');
         return w;
@@ -147,7 +155,25 @@ export class OcrService {
   static async recognizeText(imageSource: string | Buffer): Promise<OcrResult> {
     try {
       const worker = await this.getWorker();
-      const result = await worker.recognize(imageSource);
+
+      let ocrInput: string | Buffer = imageSource;
+      try {
+        const meta = await sharp(imageSource).metadata();
+        // If image or crop is narrow/small (< 400px), upscale so Leptonica does not fail min-width scaling
+        if (meta.width && meta.height && (meta.width < 400 || meta.height < 400)) {
+          ocrInput = await sharp(imageSource)
+            .resize({
+              width: Math.max(meta.width * 2, 600),
+              fit: 'inside',
+            })
+            .grayscale()
+            .toBuffer();
+        }
+      } catch {
+        // Fall back to original imageSource
+      }
+
+      const result = await worker.recognize(ocrInput);
 
       const rawText = result.data.text || '';
       const confidence = result.data.confidence || 0;

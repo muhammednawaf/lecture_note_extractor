@@ -38,9 +38,14 @@ router.get('/jobs/:id/pages', async (req: Request, res: Response) => {
     }
 
     const pages = await PageRepository.findByJobId(jobId);
+
+    const protocol = (req.headers['x-forwarded-proto'] as string) || req.protocol || 'http';
+    const host = req.get('host') || 'localhost:8000';
+    const baseUrl = `${protocol}://${host}`;
+
     const enriched = pages.map((p) => ({
       ...p,
-      imageUrl: `/storage/${p.imagePath}?v=${p.rotation || 0}`,
+      imageUrl: `${baseUrl}/storage/${p.imagePath}?v=${p.rotation || 0}`,
     }));
 
     return res.json(enriched);

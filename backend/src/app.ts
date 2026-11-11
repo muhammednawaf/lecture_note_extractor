@@ -60,9 +60,14 @@ app.use(sanitizeNoSqlPayload);
 // 5. Rate Limiting on API endpoints
 app.use('/api', globalApiRateLimiter);
 
-// 6. Static file serving with directory listing disabled
+// 6. Static file serving with permissive cross-origin headers for previews
 app.use(
   '/storage',
+  (req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+  },
   express.static(config.storageDir, {
     dotfiles: 'ignore',
     index: false,

@@ -13,7 +13,7 @@ import {
   Eye,
   FileCheck,
 } from 'lucide-react';
-import { videoApi } from '../services/api';
+import { videoApi, getFullImageUrl } from '../services/api';
 import { Job, CapturedFrame, ProcessJobResponse } from '../types';
 
 export const Processing: React.FC = () => {
@@ -252,7 +252,7 @@ export const Processing: React.FC = () => {
                 className="relative aspect-video bg-black rounded-lg border border-slate-800 overflow-hidden group shadow-sm"
               >
                 <img
-                  src={frame.imageUrl}
+                  src={getFullImageUrl(frame.imageUrl)}
                   alt={`Frame ${frame.frameIndex}`}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                   loading="lazy"

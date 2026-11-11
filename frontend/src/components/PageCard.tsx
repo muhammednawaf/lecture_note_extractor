@@ -1,5 +1,6 @@
 import React from 'react';
 import { ExtractedPage } from '../types';
+import { getFullImageUrl } from '../services/api';
 import {
   Trash2,
   Clock,
@@ -55,7 +56,7 @@ export const PageCard: React.FC<PageCardProps> = ({
         onClick={onClick}
       >
         <img
-          src={page.imageUrl}
+          src={getFullImageUrl(page.imageUrl)}
           alt={`Page ${page.pageNumber}`}
           className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200"
           loading="lazy"

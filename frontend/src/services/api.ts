@@ -15,6 +15,16 @@ import {
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
+export const getFullImageUrl = (pathOrUrl?: string): string => {
+  if (!pathOrUrl) return '';
+  if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://') || pathOrUrl.startsWith('data:')) {
+    return pathOrUrl;
+  }
+  const cleanBase = BASE_URL.replace(/\/+$/, '');
+  const cleanPath = pathOrUrl.startsWith('/') ? pathOrUrl : `/${pathOrUrl}`;
+  return `${cleanBase}${cleanPath}`;
+};
+
 const api = axios.create({
   baseURL: BASE_URL,
   timeout: 120000, // 2 minutes (video downloads can be slow)
@@ -154,25 +164,37 @@ export const videoApi = {
     const res = await api.post<CapturedFrame>(`/api/jobs/${jobId}/frames`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
-    return res.data;
+    return {
+      ...res.data,
+      imageUrl: getFullImageUrl(res.data.imageUrl),
+    };
   },
 
   getFrames: async (jobId: string, limit = 100): Promise<CapturedFrame[]> => {
     const res = await api.get<CapturedFrame[]>(`/api/jobs/${jobId}/frames`, {
       params: { limit },
     });
-    return res.data;
+    return (res.data || []).map((f) => ({
+      ...f,
+      imageUrl: getFullImageUrl(f.imageUrl),
+    }));
   },
 
   // ─── Pages (Phase 6) ──────────────────────────────────────────────────────
   getPages: async (jobId: string): Promise<ExtractedPage[]> => {
     const res = await api.get<ExtractedPage[]>(`/api/jobs/${jobId}/pages`);
-    return res.data;
+    return (res.data || []).map((p) => ({
+      ...p,
+      imageUrl: getFullImageUrl(p.imageUrl),
+    }));
   },
 
   rotatePage: async (pageId: string): Promise<ExtractedPage> => {
     const res = await api.post<ExtractedPage>(`/api/pages/${pageId}/rotate`);
-    return res.data;
+    return {
+      ...res.data,
+      imageUrl: getFullImageUrl(res.data.imageUrl),
+    };
   },
 
   reorderPages: async (jobId: string, orderedPageIds: string[]): Promise<ExtractedPage[]> => {

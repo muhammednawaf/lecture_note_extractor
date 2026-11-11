@@ -1,5 +1,6 @@
 import React from 'react';
 import { ExtractedPage } from '../types';
+import { getFullImageUrl } from '../services/api';
 import {
   RotateCw,
   X,
@@ -123,7 +124,7 @@ export const PageEditor: React.FC<PageEditorProps> = ({
         {/* Image viewport */}
         <div className="flex-1 bg-black overflow-auto p-4 flex items-center justify-center relative min-h-[300px]">
           <img
-            src={page.imageUrl}
+            src={getFullImageUrl(page.imageUrl)}
             alt={`Page ${page.pageNumber}`}
             className="max-h-[68vh] max-w-full object-contain rounded shadow"
           />
