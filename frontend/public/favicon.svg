@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="7" fill="url(#emeraldGrad)" />
+  <!-- White document body -->
+  <path d="M9 6.5C9 5.67157 9.67157 5 10.5 5H18.5L23 9.5V25.5C23 26.3284 22.3284 27 21.5 27H10.5C9.67157 27 9 26.3284 9 25.5V6.5Z" fill="#ffffff" />
+  <!-- Fold corner accent -->
+  <path d="M18.5 5V9.5H23" fill="#a7f3d0" />
+  <!-- Document text lines -->
+  <line x1="12" y1="13.5" x2="20" y2="13.5" stroke="#059669" stroke-width="1.5" stroke-linecap="round" />
+  <line x1="12" y1="17.5" x2="20" y2="17.5" stroke="#059669" stroke-width="1.5" stroke-linecap="round" />
+  <line x1="12" y1="21.5" x2="17" y2="21.5" stroke="#059669" stroke-width="1.5" stroke-linecap="round" />
+</svg>
+
