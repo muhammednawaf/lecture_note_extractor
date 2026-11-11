@@ -7,10 +7,11 @@ export async function connectDB(): Promise<boolean> {
   try {
     mongoose.set('strictQuery', false);
     await mongoose.connect(config.mongodbUri, {
-      serverSelectionTimeoutMS: 3000, // Quick timeout for local fallback
+      serverSelectionTimeoutMS: 8000, // 8s timeout for cloud/Atlas connections
     });
     isMongoConnected = true;
-    console.log(`[Database] Successfully connected to MongoDB at: ${config.mongodbUri}`);
+    const sanitizedUri = config.mongodbUri.replace(/:([^:@]+)@/, ':****@');
+    console.log(`[Database] Successfully connected to MongoDB at: ${sanitizedUri}`);
     return true;
   } catch (error: any) {
     console.warn(`[Database] MongoDB connection failed (${error.message}). Running with resilient memory/file fallback.`);
