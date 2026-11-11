@@ -26,7 +26,9 @@ storage/
 
 # Environment files (never commit secrets)
 .env
+.env.*
 *.env
+*.env.*
 !.env.example
 !**/.env.example
 
