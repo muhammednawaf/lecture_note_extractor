@@ -1,5 +1,11 @@
 # Video2PDF
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Release](https://img.shields.io/badge/Release-v1.0.0-blue.svg)](https://github.com/muhammednawaf/lecture_note_extractor/releases)
+[![Node.js](https://img.shields.io/badge/Node.js-22%20LTS-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.4-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+
 > High-throughput, CPU-optimized computer vision pipeline and document reconstruction engine that extracts clean, print-ready PDF notes from lecture videos, handwritten notebooks, and presentation recordings.
 
 ---
@@ -352,4 +358,5 @@ done
 
 ## License
 
-This project is licensed under the [ISC License](LICENSE).
+This project is open-source software licensed under the [MIT License](LICENSE).  
+Copyright &copy; 2026 [Muhammed Nawaf](https://github.com/muhammednawaf). All rights reserved.

@@ -1,7 +1,8 @@
 {
   "name": "video2pdf-frontend",
-  "private": true,
   "version": "1.0.0",
+  "author": "Muhammed Nawaf <nawafsuneer@gmail.com>",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
