@@ -1,4 +1,46 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { createWorker, Worker } from 'tesseract.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+/**
+ * Ensures wasm-feature-detect syntax error is eliminated before Tesseract worker spawns.
+ * In Node < 22.19, V8 chokes on import.source(...) inside wasm-feature-detect with
+ * SyntaxError: Unexpected identifier 'source'.
+ */
+function ensureWasmFeatureDetectPatched(): void {
+  const candidates = [
+    path.join(process.cwd(), 'node_modules', 'wasm-feature-detect', 'dist', 'cjs', 'index.cjs'),
+    path.join(process.cwd(), 'node_modules', 'wasm-feature-detect', 'dist', 'esm', 'index.js'),
+    path.resolve(__dirname, '..', '..', 'node_modules', 'wasm-feature-detect', 'dist', 'cjs', 'index.cjs'),
+    path.resolve(__dirname, '..', '..', 'node_modules', 'wasm-feature-detect', 'dist', 'esm', 'index.js'),
+  ];
+  for (const targetPath of candidates) {
+    try {
+      if (fs.existsSync(targetPath)) {
+        let content = fs.readFileSync(targetPath, 'utf8');
+        if (content.includes('import.source')) {
+          content = content.replace(
+            /sourcePhaseImports:\(\)=>\(async\(\)=>\{[^}]+\}\)\(\)/g,
+            'sourcePhaseImports:async()=>false'
+          );
+          content = content.replace(
+            /sourcePhaseImports=\(\)=>\(async\(\)=>\{[^}]+\}\)\(\)/g,
+            'sourcePhaseImports=async()=>false'
+          );
+          content = content.replace(/import\.source\([^)]+\)/g, 'Promise.resolve(false)');
+          fs.writeFileSync(targetPath, content, 'utf8');
+          console.log(`[OcrService] Patched wasm-feature-detect at ${targetPath}`);
+        }
+      }
+    } catch (err: any) {
+      console.warn(`[OcrService] Could not patch ${targetPath}:`, err?.message);
+    }
+  }
+}
 
 export interface OcrBoundingBox {
   x0: number;
@@ -48,6 +90,7 @@ export class OcrService {
     this.initPromise = (async () => {
       try {
         console.log('[OcrService] Initializing Tesseract OCR worker...');
+        ensureWasmFeatureDetectPatched();
         const w = await createWorker('eng');
         this.worker = w;
         console.log('[OcrService] Tesseract OCR worker ready.');

@@ -1,4 +1,4 @@
-FROM node:20-bookworm-slim
+FROM node:22-bookworm-slim
 
 # Install system dependencies (FFmpeg is required for frame extraction)
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -8,8 +8,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Copy backend dependencies and install
+# Copy backend dependencies, helper scripts and install
 COPY backend/package*.json ./
+COPY backend/scripts/ ./scripts/
 RUN npm ci
 
 # Copy backend source code and build TypeScript
