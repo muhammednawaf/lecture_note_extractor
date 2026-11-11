@@ -83,10 +83,23 @@ export class PdfGeneratorService {
 
     for (let i = 0; i < pages.length; i++) {
       const page = pages[i];
-      const diskPath = path.resolve(config.storageDir, page.imagePath);
+      let diskPath = path.resolve(config.storageDir, page.imagePath);
 
       if (!fs.existsSync(diskPath)) {
-        console.warn(`Page image missing from disk: ${diskPath}`);
+        const cleaned = page.imagePath.replace(/^[/\\]+/, '').replace(/^storage[/\\]+/, '');
+        const candidate = path.resolve(config.storageDir, cleaned);
+        if (fs.existsSync(candidate)) {
+          diskPath = candidate;
+        } else {
+          const directPagesPath = path.join(config.pagesDir, page.jobId, path.basename(page.imagePath));
+          if (fs.existsSync(directPagesPath)) {
+            diskPath = directPagesPath;
+          }
+        }
+      }
+
+      if (!fs.existsSync(diskPath)) {
+        console.warn(`[PdfGenerator] Page image missing from disk: ${diskPath} (stored imagePath: ${page.imagePath})`);
         continue;
       }
 
@@ -166,6 +179,12 @@ export class PdfGeneratorService {
       }
     }
 
+    if (pdfDoc.getPageCount() === 0) {
+      throw new Error(
+        `PDF generation produced 0 pages. None of the ${pages.length} page images could be loaded from disk for job ${jobId}.`
+      );
+    }
+
     const pdfBytes = await pdfDoc.save();
 
     // Ensure output directory exists
@@ -187,7 +206,7 @@ export class PdfGeneratorService {
       filename,
       filePath: targetFilePath,
       downloadUrl,
-      pageCount: pages.length,
+      pageCount: pdfDoc.getPageCount(),
       fileSizeBytes: pdfBytes.length,
       verifiedOnly: shouldFilterVerified,
     };

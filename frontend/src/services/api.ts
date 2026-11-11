@@ -203,4 +203,32 @@ export const videoApi = {
   getPdfDownloadUrl: (jobId: string): string => {
     return `${BASE_URL}/api/jobs/${jobId}/download`;
   },
+
+  downloadPdfBlob: async (jobId: string, filename?: string): Promise<void> => {
+    const res = await api.get(`/api/jobs/${jobId}/download`, {
+      responseType: 'blob',
+    });
+
+    const contentType = String(res.headers['content-type'] || '');
+    if (contentType.includes('application/json')) {
+      const text = await (res.data as Blob).text();
+      try {
+        const json = JSON.parse(text);
+        throw new Error(json.error || 'Failed to download PDF');
+      } catch (e: any) {
+        throw new Error(e.message || 'Failed to download PDF');
+      }
+    }
+
+    const blob = new Blob([res.data], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const safeFilename = filename && filename.trim() ? filename : 'lecture_notes.pdf';
+    link.setAttribute('download', safeFilename.endsWith('.pdf') ? safeFilename : `${safeFilename}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  },
 };

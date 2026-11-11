@@ -48,9 +48,15 @@ router.post('/jobs/:id/export', heavyComputeRateLimiter, async (req: Request, re
       onlyVerified: onlyVerified === true || onlyVerified === 'true',
     });
 
+    // Provide absolute downloadUrl pointing to the backend host so cross-origin frontends (e.g. Vercel) don't navigate locally
+    const protocol = (req.headers['x-forwarded-proto'] as string) || req.protocol || 'http';
+    const host = req.get('host') || 'localhost:8000';
+    const absoluteDownloadUrl = `${protocol}://${host}/api/jobs/${jobId}/download`;
+
     return res.json({
       status: 'success',
       ...result,
+      downloadUrl: absoluteDownloadUrl,
     });
   } catch (error: any) {
     console.error('Error generating PDF:', error);

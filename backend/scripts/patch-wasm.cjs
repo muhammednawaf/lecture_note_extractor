@@ -54,3 +54,4 @@ if (patchedCount > 0) {
 } else {
   console.log('[patch-wasm] wasm-feature-detect is already clean or not found.');
 }
+

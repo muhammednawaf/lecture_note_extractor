@@ -337,7 +337,12 @@ export class ImageAlignmentAlgorithms {
     const baseHeight = metaBase.height || 720;
     const nextHeight = metaNext.height || 720;
 
-    const absShiftY = Math.abs(shiftY);
+    const absShiftY = Math.round(Math.abs(shiftY));
+
+    // If shift is negligible (0 or sub-pixel), there is no new slice to append: return base image
+    if (absShiftY < 2) {
+      return Buffer.isBuffer(baseImage) ? baseImage : await sharp(baseImage).toBuffer();
+    }
 
     // Safety guard: max stitched height capped at 6,000 px to prevent memory exhaustion
     if (baseHeight + absShiftY > 6000 || baseHeight >= 5500) {
@@ -345,21 +350,25 @@ export class ImageAlignmentAlgorithms {
     }
 
     const newSliceHeight = Math.min(absShiftY, nextHeight);
+    if (newSliceHeight < 2) {
+      return Buffer.isBuffer(baseImage) ? baseImage : await sharp(baseImage).toBuffer();
+    }
 
     if (shiftY >= 0) {
       // Downward scroll: content moved UP, append bottom slice of nextImage
-      const newSliceTop = Math.max(0, nextHeight - newSliceHeight);
+      const newSliceTop = Math.max(0, Math.round(nextHeight - newSliceHeight));
+      const safeSliceHeight = Math.max(1, Math.min(newSliceHeight, nextHeight - newSliceTop));
 
       const newSliceBuffer = await sharp(nextImage)
         .extract({
           left: 0,
           top: newSliceTop,
           width,
-          height: newSliceHeight,
+          height: safeSliceHeight,
         })
         .toBuffer();
 
-      const combinedHeight = baseHeight + newSliceHeight;
+      const combinedHeight = baseHeight + safeSliceHeight;
 
       return await sharp({
         create: {
@@ -377,16 +386,18 @@ export class ImageAlignmentAlgorithms {
         .toBuffer();
     } else {
       // Upward scroll (shiftY < 0): content moved DOWN, prepend top slice of nextImage
+      const safeSliceHeight = Math.max(1, Math.min(newSliceHeight, nextHeight));
+
       const newSliceBuffer = await sharp(nextImage)
         .extract({
           left: 0,
           top: 0,
           width,
-          height: newSliceHeight,
+          height: safeSliceHeight,
         })
         .toBuffer();
 
-      const combinedHeight = baseHeight + newSliceHeight;
+      const combinedHeight = baseHeight + safeSliceHeight;
 
       return await sharp({
         create: {
@@ -398,7 +409,7 @@ export class ImageAlignmentAlgorithms {
       })
         .composite([
           { input: newSliceBuffer, top: 0, left: 0 },
-          { input: typeof baseImage === 'string' ? baseImage : baseImage, top: newSliceHeight, left: 0 },
+          { input: typeof baseImage === 'string' ? baseImage : baseImage, top: safeSliceHeight, left: 0 },
         ])
         .jpeg({ quality: 92 })
         .toBuffer();

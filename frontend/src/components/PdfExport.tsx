@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FileText, Download, CheckCircle2, Loader2, ShieldCheck } from 'lucide-react';
 import { PdfExportOptions, PdfExportResponse } from '../types';
+import { videoApi } from '../services/api';
 
 interface PdfExportProps {
   jobId: string;
@@ -21,12 +22,11 @@ export const PdfExport: React.FC<PdfExportProps> = ({
   const [pageSize, setPageSize] = useState<'A4' | 'LETTER' | 'ORIGINAL'>('A4');
   const [orientation, setOrientation] = useState<'auto' | 'landscape' | 'portrait'>('auto');
   const [includePageNumbers, setIncludePageNumbers] = useState(true);
-  const [onlyVerified, setOnlyVerified] = useState(true);
+  const effectiveVerifiedCount = verifiedPagesCount !== undefined ? verifiedPagesCount : totalPages;
+  const [onlyVerified, setOnlyVerified] = useState(effectiveVerifiedCount > 0);
   const [isExporting, setIsExporting] = useState(false);
   const [exportedPdf, setExportedPdf] = useState<PdfExportResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const effectiveVerifiedCount = verifiedPagesCount !== undefined ? verifiedPagesCount : totalPages;
 
   const handleGeneratePdf = async () => {
     setError(null);
@@ -43,13 +43,8 @@ export const PdfExport: React.FC<PdfExportProps> = ({
       });
       setExportedPdf(res);
 
-      // Trigger automatic browser download
-      const link = document.createElement('a');
-      link.href = res.downloadUrl;
-      link.setAttribute('download', res.filename);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // Trigger automatic browser download via direct Blob stream from backend
+      await videoApi.downloadPdfBlob(jobId, res.filename);
     } catch (err: any) {
       setError(err.message || 'Failed to generate PDF document');
     } finally {
@@ -194,13 +189,20 @@ export const PdfExport: React.FC<PdfExportProps> = ({
             <span className="truncate max-w-[180px]">{exportedPdf.filename}</span>
             <span>{(exportedPdf.fileSizeBytes / (1024 * 1024)).toFixed(2)} MB ({exportedPdf.pageCount} pages)</span>
           </div>
-          <a
-            href={exportedPdf.downloadUrl}
-            download={exportedPdf.filename}
-            className="inline-flex items-center gap-1 text-xs text-emerald-400 hover:underline"
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await videoApi.downloadPdfBlob(jobId, exportedPdf.filename);
+              } catch (e: any) {
+                setError(e.message || 'Failed to re-download PDF');
+              }
+            }}
+            className="inline-flex items-center gap-1 text-xs text-emerald-400 hover:underline cursor-pointer"
           >
+            <Download className="w-3.5 h-3.5" />
             <span>Click to download again</span>
-          </a>
+          </button>
         </div>
       )}
     </div>
