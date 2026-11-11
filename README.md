@@ -45,7 +45,7 @@ flowchart TD
     end
 
     subgraph Lifecycle ["5. Lifecycle Daemon"]
-        Cleanup["Storage Cleanup Daemon\n(1-Hour Retention Sweep)"] -.->|Purge Expired| Store
+        Cleanup["Storage Cleanup Daemon\n(15-Minute Retention Sweep)"] -.->|Purge Expired| Store
     end
 ```
 
@@ -93,7 +93,7 @@ Video2PDF includes comprehensive production defenses designed according to OWASP
 | **HTTP Response Splitting (CRLF)** | Filenames provided in `Content-Disposition` headers are sanitized to strip carriage returns, line feeds, null bytes, and non-alphanumeric characters. |
 | **Rate Limiting** | In-memory sliding-window rate limiters with automatic TTL cleanup protect global API endpoints (200 req / 15 min), heavy compute routes (30 req / 15 min), and authentication routes (10 req / 15 min). |
 | **Security Headers** | Enforces `Content-Security-Policy`, `Strict-Transport-Security` (HSTS), `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection`, `Referrer-Policy`, `Permissions-Policy`, and strips `X-Powered-By`. |
-| **Automated 1-Hour Storage Cleanup** | Background lifecycle daemon (`storageCleanup.service.ts`) automatically sweeps disk directories and database stores every 10 minutes, purging frames, pages, PDFs, and uploaded videos older than 1 hour. |
+| **Automated 15-Minute Storage Cleanup** | Background lifecycle daemon (`storageCleanup.service.ts`) automatically sweeps disk directories and database stores every 2 minutes, purging frames, pages, PDFs, and uploaded videos older than 15 minutes. |
 
 ---
 
@@ -205,8 +205,9 @@ Both frontend and backend are configured via standard `.env` files. Sample templ
 | `HOST` | `string` | `0.0.0.0` | Host interface binding |
 | `NODE_ENV` | `string` | `development` | Environment mode (`development` or `production`) |
 | `STORAGE_DIR` | `string` | `./storage` | Directory where frames, pages, videos, and PDFs reside |
-| `STORAGE_RETENTION_MS` | `number` | `3600000` | Retention lifetime in milliseconds (default: 1 hour) |
-| `CLEANUP_INTERVAL_MS` | `number` | `600000` | Interval between background disk cleanup sweeps (10 min) |
+| `STORAGE_RETENTION_MS` | `number` | `900000` | Retention lifetime in milliseconds (default: 15 minutes) |
+| `CLEANUP_INTERVAL_MS` | `number` | `120000` | Interval between background disk cleanup sweeps (2 min) |
+| `RATE_LIMIT_GLOBAL_MAX` | `number` | `5000` | Max requests per 15-minute sliding window (frames exempt) |
 | `JWT_SECRET` | `string` | *random in dev* | Secret key for signing auth tokens (**strictly required in prod**) |
 | `REQUIRE_AUTH` | `boolean` | `false` | Enforce mandatory authentication on all API routes |
 | `MONGODB_URI` | `string` | `mongodb://localhost:27017/video2pdf` | MongoDB connection URI (falls back to memory if down) |

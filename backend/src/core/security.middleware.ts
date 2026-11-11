@@ -67,10 +67,17 @@ export function createRateLimiter(options: {
   maxRequests: number;
   message?: string;
   prefix?: string;
+  skip?: (req: Request) => boolean;
 }) {
   return (req: Request, res: Response, next: NextFunction) => {
+    // Check if request should be exempted from rate limiting (e.g. frame assets)
+    if (options.skip && options.skip(req)) {
+      return next();
+    }
+
     // Determine client identifier (IP address)
     const clientIp =
+      req.ip ||
       (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ||
       req.socket.remoteAddress ||
       'unknown-ip';
@@ -109,15 +116,17 @@ export function createRateLimiter(options: {
   };
 }
 
-// Global API rate limiter (100 requests per 15 min per IP)
+// Global API rate limiter (5,000 requests per 15 min per IP; prevents blocking polling & frame rendering)
 export const globalApiRateLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
-  maxRequests: parseInt(process.env.RATE_LIMIT_GLOBAL_MAX || '200', 10),
+  maxRequests: parseInt(process.env.RATE_LIMIT_GLOBAL_MAX || '5000', 10),
   prefix: 'api',
   message: 'API rate limit exceeded. Please wait a few minutes.',
+  // Exclude static frame asset fetches and frame listing from consuming global quota
+  skip: (req: Request) => req.method === 'GET' && (req.path.includes('/frames') || req.path.startsWith('/storage')),
 });
 
-// Stricter rate limiter for heavy processing/extraction endpoints (20 per 15 min per IP)
+// Stricter rate limiter for heavy processing/extraction endpoints (30 per 15 min per IP)
 export const heavyComputeRateLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
   maxRequests: parseInt(process.env.RATE_LIMIT_HEAVY_MAX || '30', 10),

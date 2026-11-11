@@ -5,7 +5,7 @@
  * and can then be fed into frameExtractor.service.ts for frame sampling.
  */
 
-import { Ytdl, parseVideoId, Quality, ProgressEvent } from '@distube/ytdl-core';
+import { Ytdl, Client, parseVideoId, Quality, ProgressEvent } from '@distube/ytdl-core';
 import fs from 'fs';
 import path from 'path';
 import { config } from '../core/config.js';
@@ -16,7 +16,27 @@ export interface DownloadProgress {
   percent: number;
 }
 
-const ytdlClient = new Ytdl();
+/**
+ * Configure Ytdl client instance prioritizing mobile and TV clients (Mweb, Tv, WebEmbedded)
+ * to bypass aggressive web bot-verification challenges on server/cloud IPs.
+ * Also supports session cookie authentication via YOUTUBE_COOKIE environment variable.
+ */
+function createYtdlClient(): Ytdl {
+  const cookie = process.env.YOUTUBE_COOKIE || undefined;
+  return new Ytdl({
+    cookie,
+    clients: [
+      Client.Mweb,
+      Client.Tv,
+      Client.WebEmbedded,
+      Client.VisionOS,
+      Client.WebCreator,
+      Client.WebMusic,
+    ],
+  });
+}
+
+const ytdlClient = createYtdlClient();
 
 export class VideoDownloaderService {
   /**
@@ -79,25 +99,53 @@ export class VideoDownloaderService {
         resolve(p);
       };
 
-      const stream = ytdlClient.download(url, {
-        quality: Quality.HighestVideo,
-        filter: (f) => Boolean(f.hasVideo),
-        onProgress: (event: ProgressEvent) => {
-          if (event.total && event.total > 0 && onProgress) {
-            const percent = Math.min(100, Math.round((event.downloaded / event.total) * 100));
-            onProgress({
-              downloaded: event.downloaded,
-              total: event.total,
-              percent,
-            });
-          }
-        },
-      });
+      let stream: any;
+      try {
+        stream = ytdlClient.download(url, {
+          quality: Quality.HighestVideo,
+          filter: (f) => Boolean(f.hasVideo),
+          onProgress: (event: ProgressEvent) => {
+            if (event.total && event.total > 0 && onProgress) {
+              const percent = Math.min(100, Math.round((event.downloaded / event.total) * 100));
+              onProgress({
+                downloaded: event.downloaded,
+                total: event.total,
+                percent,
+              });
+            }
+          },
+        });
+      } catch (err: unknown) {
+        const rawMsg = err instanceof Error ? err.message : String(err);
+        let userMsg = rawMsg;
+        if (
+          rawMsg.includes("Sign in to confirm you're not a bot") ||
+          rawMsg.includes('bot') ||
+          rawMsg.includes('Sign in')
+        ) {
+          userMsg =
+            "YouTube bot verification triggered on this server IP. " +
+            "Please upload the lecture video directly using 'Local Video File Mode', or set a valid YOUTUBE_COOKIE in server environment settings.";
+        }
+        return safeReject(new Error(`YouTube download failed: ${userMsg}`));
+      }
 
       stream.on('error', (err: unknown) => {
-        const errorMsg = err instanceof Error ? err.message : String(err);
-        console.error(`[VideoDownloader] Download error for job ${jobId}:`, errorMsg);
-        safeReject(new Error(`YouTube download failed: ${errorMsg}`));
+        const rawMsg = err instanceof Error ? err.message : String(err);
+        console.error(`[VideoDownloader] Download error for job ${jobId}:`, rawMsg);
+
+        let userMsg = rawMsg;
+        if (
+          rawMsg.includes("Sign in to confirm you're not a bot") ||
+          rawMsg.includes('bot') ||
+          rawMsg.includes('Sign in')
+        ) {
+          userMsg =
+            "YouTube bot verification triggered on this server IP. " +
+            "Please upload the lecture video directly using 'Local Video File Mode', or set a valid YOUTUBE_COOKIE in server environment settings.";
+        }
+
+        safeReject(new Error(`YouTube download failed: ${userMsg}`));
       });
 
       const writeStream = fs.createWriteStream(outputPath);

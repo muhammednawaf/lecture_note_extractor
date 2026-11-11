@@ -109,7 +109,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 async function startServer() {
   await connectDB();
 
-  // Start automated 1-hour storage and database retention cleanup daemon
+  // Start automated 15-minute storage and database retention cleanup daemon
   StorageCleanupService.startScheduledCleanup();
 
   const server = app.listen(config.port, config.host, () => {
@@ -118,7 +118,7 @@ async function startServer() {
     console.log(`📂 Storage directory: ${config.storageDir}`);
     console.log(`🏥 Health check: http://${config.host}:${config.port}/health`);
     console.log(`🛡 Environment: ${isProduction ? 'PRODUCTION (Hardened)' : 'DEVELOPMENT'}`);
-    console.log(`🧹 Storage Auto-Cleanup: 1 Hour Retention Daemon Active`);
+    console.log(`🧹 Storage Auto-Cleanup: 15-Minute Retention Daemon Active`);
     console.log(`=======================================================`);
   });
 

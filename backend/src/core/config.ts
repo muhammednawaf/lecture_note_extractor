@@ -40,6 +40,6 @@ export const config = {
   videosDir: VIDEOS_DIR,
   tempDir: TEMP_DIR,
   maxFrameSizeBytes: 15 * 1024 * 1024, // 15MB
-  retentionMs: parseInt(process.env.STORAGE_RETENTION_MS || '', 10) || 60 * 60 * 1000, // 1 hour default
-  cleanupIntervalMs: parseInt(process.env.CLEANUP_INTERVAL_MS || '', 10) || 10 * 60 * 1000, // 10 minutes default
+  retentionMs: parseInt(process.env.STORAGE_RETENTION_MS || '', 10) || 15 * 60 * 1000, // 15 minutes default
+  cleanupIntervalMs: parseInt(process.env.CLEANUP_INTERVAL_MS || '', 10) || 2 * 60 * 1000, // 2 minutes default
 };
